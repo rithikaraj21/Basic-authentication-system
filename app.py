@@ -1,13 +1,13 @@
 import os
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 import sqlite3
 import bcrypt
 
-
 app = Flask(__name__)
 
-
-app.secret_key = os.environ.get("SECRET_KEY")
+# SAFE fallback (prevents crash)
+app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret_key")
+get("SECRET_KEY")
 
 
 def get_db():
