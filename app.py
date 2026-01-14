@@ -4,16 +4,14 @@ import sqlite3
 import bcrypt
 
 app = Flask(__name__)
-
-# SAFE fallback (prevents crash)
 app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret_key")
-get("SECRET_KEY")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "users.db")
 
 def get_db():
-    return sqlite3.connect("users.db")
+    return sqlite3.connect(DB_PATH)
 
-# Create users table
 with get_db() as db:
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -29,8 +27,7 @@ def login():
         username = request.form["username"]
         password = request.form["password"].encode()
 
-        db = get_db()
-        user = db.execute(
+        user = get_db().execute(
             "SELECT password FROM users WHERE username=?",
             (username,)
         ).fetchone()
@@ -40,41 +37,33 @@ def login():
             return redirect("/dashboard")
 
         return "Invalid credentials"
-
     return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        username = request.form["username"]
-        password = bcrypt.hashpw(
+        hashed = bcrypt.hashpw(
             request.form["password"].encode(),
             bcrypt.gensalt()
         )
-
         try:
-            db = get_db()
-            db.execute(
+            get_db().execute(
                 "INSERT INTO users (username, password) VALUES (?, ?)",
-                (username, password)
+                (request.form["username"], hashed)
             )
-            db.commit()
+            get_db().commit()
             return redirect("/")
         except:
             return "User already exists"
-
     return render_template("register.html")
 
 @app.route("/dashboard")
 def dashboard():
     if "user" not in session:
         return redirect("/")
-    return render_template("dashboard.html", user=session["user"])
+    return f"Welcome {session['user']}"
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
-
-if __name__ == "__main__":
-    app.run()
