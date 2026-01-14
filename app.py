@@ -1,9 +1,13 @@
 from flask import Flask, render_template, request, redirect, session, url_for
 import sqlite3
 import bcrypt
+import os
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"
+
+
+app.secret_key = os.environ.get("SECRET_KEY")
+
 
 def get_db():
     return sqlite3.connect("users.db")
